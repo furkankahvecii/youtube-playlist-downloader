@@ -106,5 +106,5 @@ class YoutubePlaylistDownload():
 
 
 url = input("Enter your playlist url: ")
-brow = webdriver.Chrome(executable_path="C:/Users/Furkan Kahveci/Desktop/deneme/alzare/chromedriver.exe")
+brow = webdriver.Chrome(executable_path="your/chromedriver/path")
 instance = YoutubePlaylistDownload(brow,url)
