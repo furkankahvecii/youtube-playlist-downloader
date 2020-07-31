@@ -1,10 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException 
-from selenium.webdriver.common.keys import Keys
 
 import time
-import sys
 import re
 
 '''
@@ -14,23 +12,24 @@ import re
 class YoutubeLocators(object):
     ALL_LIST = (By.XPATH,'/html/body/ytd-app/div/ytd-page-manager/ytd-browse/ytd-two-column-browse-results-renderer/div[1]/ytd-section-list-renderer/div[2]/ytd-item-section-renderer/div[3]/ytd-playlist-video-list-renderer/div[3]//ytd-playlist-video-renderer')
     EACH_VIDEO = (By.CSS_SELECTOR,'#content > a')
+    ISSET_DOWNLOAD = (By.CSS_SELECTOR, '#buttons')
+    COUNT_VIDEO = (By.CSS_SELECTOR,'#stats > yt-formatted-string:nth-child(1)')
+    VIDEO_TITLE = (By.CSS_SELECTOR, '#title')
+
+class DownloadLocators(object):
+    PRIVATE_ERROR = (By.XPATH, '//*[@id="container"]/yt-formatted-string')
     LINK_INPUT = (By.CSS_SELECTOR,'#input')
     SUBMIT_INPUT = (By.CSS_SELECTOR,'#submit')
-    ISSET_DOWNLOAD = (By.CSS_SELECTOR, '#buttons')
     DOWNLOAD = (By.CSS_SELECTOR,'#buttons > a:nth-child(1)')
-    COUNT_VIDEO = (By.CSS_SELECTOR,'#stats > yt-formatted-string:nth-child(1)')
     ERROR_MESSAGE = (By.CSS_SELECTOR, '#error')
-    VIDEO_TITLE = (By.CSS_SELECTOR, '#title')
-    PRIVATE_ERROR = (By.XPATH, '//*[@id="container"]/yt-formatted-string')
-
 
 class YoutubePlaylistDownload():
-    def __init__(self, driver, url):
+    def __init__(self, driver):
         self.driver = driver
         self.links = {}
         self.get_videos()
 
-    def control_url(self,driver):
+    def control_url(self):
         try:
             self.driver.get(url)
             return self.driver.current_url != "https://www.youtube.com/oops" if True else False
@@ -40,7 +39,7 @@ class YoutubePlaylistDownload():
     def get_videos(self):
         self.driver.implicitly_wait(3)
         assert self.control_url(self.driver), "Invalid url!"
-        assert self.driver.find_element(*YoutubeLocators().PRIVATE_ERROR).get_attribute('innerHTML') != "This playlist is private.", "Playlist is private."
+        assert self.driver.find_element(*DownloadLocators().PRIVATE_ERROR).get_attribute('innerHTML') != "This playlist is private.", "Playlist is private."
 
         playlist_video_count = re.search(r'\d+', self.driver.find_element(*YoutubeLocators().COUNT_VIDEO).get_attribute('innerHTML')).group(0)
         for i in range(0,int(int(playlist_video_count) / 100)):
@@ -72,20 +71,20 @@ class YoutubePlaylistDownload():
     def download(self,link):
         try:
             self.driver.get("https://ytmp3.cc/en13/")
-            self.driver.find_element(*YoutubeLocators().LINK_INPUT).send_keys(link)
-            self.driver.find_element(*YoutubeLocators().SUBMIT_INPUT).click()
+            self.driver.find_element(*DownloadLocators  ().LINK_INPUT).send_keys(link)
+            self.driver.find_element(*DownloadLocators().SUBMIT_INPUT).click()
             time.sleep(2)
         except:
             print(link + " download failed.")
             return False
 
         while True:
-            if self.check_exists_element(YoutubeLocators().ERROR_MESSAGE):
+            if self.check_exists_element(DownloadLocators().ERROR_MESSAGE):
                 print(link + " download failed.")
                 return False
             elif self.driver.find_element(*YoutubeLocators().ISSET_DOWNLOAD).get_attribute('style') == "display: block;":
                 self.driver.implicitly_wait(1)
-                self.driver.execute_script("arguments[0].click();",self.driver.find_element(*YoutubeLocators().DOWNLOAD))
+                self.driver.execute_script("arguments[0].click();",self.driver.find_element(*DownloadLocators().DOWNLOAD))
                 print(self.driver.find_element(*YoutubeLocators().VIDEO_TITLE).get_attribute('innerHTML') + " download successfull.")         
                 break
 
